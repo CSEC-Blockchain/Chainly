@@ -2,7 +2,7 @@
 
 Chainly is an AI agent for **Ethereum Sepolia** (chain ID `11155111`). You ask questions in plain English. It reads **live onchain data**, analyzes wallet activity, and **prepares** transactions that you approve in your own wallet. It never signs anything for you.
 
-> Built for the **CSEC-ASTU Blockchain Team, Blockchain × AI session**.
+> Built by the **CSEC-ASTU Blockchain Team** for the Blockchain × AI session. Contributions welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 | Route | What it is |
 |---|---|
