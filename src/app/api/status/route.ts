@@ -11,6 +11,6 @@ export async function GET() {
       ? { configured: true, provider: model.provider, model: model.modelId }
       : { configured: false, reason: model.reason },
     explorer: explorerName({ apiKey: process.env.ETHERSCAN_API_KEY }),
-    customRpc: Boolean(process.env.BASE_SEPOLIA_RPC_URL),
+    customRpc: Boolean(process.env.SEPOLIA_RPC_URL),
   });
 }

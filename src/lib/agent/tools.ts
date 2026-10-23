@@ -49,13 +49,13 @@ export function createChainlyTools(ctx: ToolsContext) {
 
   return {
     getEthBalance: tool({
-      description: "Get the native ETH balance of an address on Base Sepolia. Also tells whether the address is a smart contract.",
+      description: "Get the native ETH balance of an address on Ethereum Sepolia. Also tells whether the address is a smart contract.",
       inputSchema: z.object({ address: addressSchema.optional() }),
       execute: async ({ address }) => getEthBalance(ctx.client, requireAddress(address)),
     }),
 
     getTokenBalance: tool({
-      description: `Get an ERC-20 token balance on Base Sepolia. 'token' may be a contract address or a known symbol (${Object.keys(KNOWN_TOKENS).join(", ")}).`,
+      description: `Get an ERC-20 token balance on Ethereum Sepolia. 'token' may be a contract address or a known symbol (${Object.keys(KNOWN_TOKENS).join(", ")}).`,
       inputSchema: z.object({
         address: addressSchema.optional(),
         token: z.string().describe("ERC-20 contract address or known symbol like USDC"),
@@ -64,13 +64,13 @@ export function createChainlyTools(ctx: ToolsContext) {
     }),
 
     getTransaction: tool({
-      description: "Read the details and status of a transaction by hash on Base Sepolia (value, gas, fee, confirmations, success/failure).",
+      description: "Read the details and status of a transaction by hash on Ethereum Sepolia (value, gas, fee, confirmations, success/failure).",
       inputSchema: z.object({ hash: z.string().describe("0x-prefixed 32-byte transaction hash") }),
       execute: async ({ hash }) => getTransactionDetails(ctx.client, hash),
     }),
 
     getNetworkStatus: tool({
-      description: "Get live Base Sepolia network info: latest block, gas price, base fee, priority fee, block utilization, and the cost of a simple ETH transfer.",
+      description: "Get live Ethereum Sepolia network info: latest block, gas price, base fee, priority fee, block utilization, and the cost of a simple ETH transfer.",
       inputSchema: z.object({}),
       execute: async () => getNetworkStatus(ctx.client),
     }),
@@ -105,7 +105,7 @@ export function createChainlyTools(ctx: ToolsContext) {
 
     prepareTransaction: tool({
       description:
-        "Prepare a native ETH transfer from the user's connected wallet on Base Sepolia. Validates the recipient and amount, checks the balance, estimates gas and returns a preview. This does NOT send anything: the user must review and approve it in their wallet. Also use this to estimate the gas fee of a transfer.",
+        "Prepare a native ETH transfer from the user's connected wallet on Ethereum Sepolia. Validates the recipient and amount, checks the balance, estimates gas and returns a preview. This does NOT send anything: the user must review and approve it in their wallet. Also use this to estimate the gas fee of a transfer.",
       inputSchema: z.object({
         to: z.string().describe("Recipient 0x address"),
         amountEth: z.string().describe("Amount of ETH as a decimal string, e.g. '0.001'"),

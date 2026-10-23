@@ -8,8 +8,8 @@ const NOW = Date.parse("2026-10-23T12:00:00Z");
 
 const base: PreparedTransfer = {
   kind: "eth_transfer",
-  chainId: 84532,
-  network: "Base Sepolia",
+  chainId: 11155111,
+  network: "Ethereum Sepolia",
   from: FROM,
   to: "0x2222222222222222222222222222222222222222",
   valueWei: parseEther("0.001").toString(),
@@ -35,12 +35,12 @@ describe("guardPreparedTransfer", () => {
     const result = guardPreparedTransfer(base, { address: FROM.toUpperCase().replace("0X", "0x") }, NOW);
     expect(result).toEqual({
       ok: true,
-      request: { to: base.to, value: parseEther("0.001"), gas: 21000n, chainId: 84532 },
+      request: { to: base.to, value: parseEther("0.001"), gas: 21000n, chainId: 11155111 },
     });
   });
 
   it.each<[string, Partial<PreparedTransfer>, string | undefined, RegExp]>([
-    ["wrong chain", { chainId: 1 }, FROM, /expected Base Sepolia/],
+    ["wrong chain", { chainId: 1 }, FROM, /expected Ethereum Sepolia/],
     ["failed checks", { readyToSign: false }, FROM, /safety checks/],
     ["different sender", {}, "0x9999999999999999999999999999999999999999", /differs/],
     ["no wallet", {}, undefined, /No wallet/],
@@ -53,5 +53,14 @@ describe("guardPreparedTransfer", () => {
     const result = guardPreparedTransfer({ ...base, ...patch }, { address }, NOW);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reasons.join(" ")).toMatch(reason);
+  });
+});
+
+describe("tx-records", () => {
+  it("keys previews by preparation time, sender, recipient and value", async () => {
+    const { previewKey } = await import("@/lib/blockchain/tx-records");
+    expect(previewKey(base)).toBe(previewKey({ ...base, from: base.from!.toUpperCase().replace("0X", "0x") as `0x${string}` }));
+    expect(previewKey(base)).not.toBe(previewKey({ ...base, valueWei: "1" }));
+    expect(previewKey(base)).not.toBe(previewKey({ ...base, preparedAt: new Date(0).toISOString() }));
   });
 });

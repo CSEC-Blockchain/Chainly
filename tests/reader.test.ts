@@ -16,12 +16,12 @@ describe("reader", () => {
       balanceEth: "1.23456789",
       isContract: false,
       blockNumber: "99",
-      explorerUrl: `https://sepolia.basescan.org/address/${ADDR}`,
+      explorerUrl: `https://sepolia.etherscan.io/address/${ADDR}`,
     });
   });
 
   it("resolves known token symbols case-insensitively", () => {
-    expect(resolveToken("usdc")).toBe("0x036CbD53842c5426634e7929541eC2318f3dCF7e");
+    expect(resolveToken("usdc")).toBe("0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238");
     expect(() => resolveToken("DOGE")).toThrow(/token contract address/);
   });
 

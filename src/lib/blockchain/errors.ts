@@ -53,7 +53,7 @@ export function toBlockchainError(error: unknown): BlockchainError {
     if (/HttpRequest|Timeout|RpcRequest|WebSocket|Fallback/i.test(name) || /HTTP request failed|took too long/i.test(short)) {
       return new BlockchainError(
         "RPC_ERROR",
-        "The Base Sepolia RPC endpoint is unavailable or timed out. Please try again in a moment.",
+        "The Ethereum Sepolia RPC endpoint is unavailable or timed out. Please try again in a moment.",
       );
     }
     return new BlockchainError("UNKNOWN", short);

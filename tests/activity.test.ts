@@ -36,7 +36,7 @@ describe("analyzeWalletActivity", () => {
     tx({ from: ME, to: DEX, value: parseEther("5").toString(), input: "0x38ed1739abcd", functionName: "swapExactTokensForTokens(uint256)", isError: "1", gasUsed: "50000", timeStamp: day(20) }),
   ];
   const tokens: ExplorerTokenTransfer[] = [
-    { hash: "0xa", timeStamp: day(20), from: DEX, to: ME, value: "2500000", contractAddress: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", tokenName: "USD Coin", tokenSymbol: "USDC", tokenDecimal: "6" },
+    { hash: "0xa", timeStamp: day(20), from: DEX, to: ME, value: "2500000", contractAddress: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", tokenName: "USD Coin", tokenSymbol: "USDC", tokenDecimal: "6" },
   ];
 
   const result = analyzeWalletActivity(ME, txs, tokens, NOW);

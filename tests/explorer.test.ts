@@ -5,14 +5,14 @@ import { buildExplorerUrl, fetchTransactions, parseExplorerResponse } from "@/li
 describe("buildExplorerUrl", () => {
   it("uses keyless Blockscout by default", () => {
     const url = buildExplorerUrl({ module: "account", action: "txlist" });
-    expect(url.origin).toBe("https://base-sepolia.blockscout.com");
+    expect(url.origin).toBe("https://eth-sepolia.blockscout.com");
     expect(url.searchParams.get("apikey")).toBeNull();
   });
 
-  it("uses Etherscan V2 with chainid 84532 when a key is set", () => {
+  it("uses Etherscan V2 with chainid 11155111 when a key is set", () => {
     const url = buildExplorerUrl({ module: "account" }, { apiKey: "K" });
     expect(url.hostname).toBe("api.etherscan.io");
-    expect(url.searchParams.get("chainid")).toBe("84532");
+    expect(url.searchParams.get("chainid")).toBe("11155111");
     expect(url.searchParams.get("apikey")).toBe("K");
   });
 });
