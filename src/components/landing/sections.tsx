@@ -26,7 +26,7 @@ import { CHAIN_ID, EXPLORER_URL, FAUCET_URL } from "@/lib/blockchain/chain";
 import { cn } from "@/lib/utils";
 import { ProductPreview } from "./product-preview";
 
-const REPO_URL = "https://github.com/lijnati/Chainly";
+const REPO_URL = "https://github.com/CSEC-Blockchain/Chainly";
 
 /* ───────────────────────── Building blocks ───────────────────────── */
 
