@@ -85,4 +85,4 @@ If your change touches `transfer.ts`, `signing-guard.ts`, `tx-records.ts` or `to
 
 ## Questions?
 
-Open a [discussion or issue](https://github.com/CSEC-Blockchain/Chainly/issues) or ask in the team channel.
+Open a [discussion or issue](https://github.com/CSEC-Blockchain/Chainly/issues) or ask in the team group. 
