@@ -28,17 +28,26 @@ Chainly is an AI agent for **Ethereum Sepolia** (chain ID `11155111`). You ask q
 
 ```bash
 pnpm install
-cp .env.example .env.local   # add ONE LLM key
+cp .env.example .env.local   # add your AI Gateway key
 pnpm dev                     # http://localhost:3000
 ```
 
-Minimum `.env.local`:
+By default Chainly uses the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) with the free `nvidia/nemotron-3.5-lightning-free` model. Minimum `.env.local`:
 
 ```bash
+AI_GATEWAY_API_KEY=...       # Vercel dashboard → AI Gateway → API Keys
+```
+
+On Vercel deployments no key is needed: the gateway authenticates with the project's OIDC token. To try another gateway model, set `LLM_MODEL` (for example `reflection/beam-free`, or a paid one like `anthropic/claude-sonnet-5-5`).
+
+To use a provider directly instead, set its key (and optionally `LLM_PROVIDER`):
+
+```bash
+LLM_PROVIDER=openai          # openai | anthropic | google | openai-compatible
 OPENAI_API_KEY=sk-...        # or ANTHROPIC_API_KEY / GOOGLE_GENERATIVE_AI_API_KEY
 ```
 
-For a free option, use any OpenAI-compatible provider (Groq, OpenRouter, Ollama):
+Any OpenAI-compatible provider (Groq, OpenRouter, Ollama) works too:
 
 ```bash
 LLM_PROVIDER=openai-compatible
@@ -172,7 +181,7 @@ The tests cover:
 
 ## Troubleshooting
 
-- **"LLM not configured" notice:** set a key in `.env.local` and restart.
+- **"LLM not configured" notice:** set `AI_GATEWAY_API_KEY` (or another provider's key) in `.env.local` and restart.
 - **RPC errors:** public endpoints are rate limited; set `SEPOLIA_RPC_URL`.
 - **Explorer rate limit:** add a free `ETHERSCAN_API_KEY`.
 - **Wrong network:** use the **Switch to Sepolia** button in the header.
