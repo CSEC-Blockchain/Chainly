@@ -21,7 +21,7 @@ describe("prepareEthTransfer", () => {
   it("prepares a ready-to-sign preview when all checks pass", async () => {
     const preview = await prepareEthTransfer(client(), { from: FROM, to: TO, amountEth: "0.001" });
     expect(preview).toMatchObject({
-      chainId: 84532,
+      chainId: 11155111,
       from: FROM,
       to: TO,
       valueWei: parseEther("0.001").toString(),

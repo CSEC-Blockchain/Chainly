@@ -4,8 +4,8 @@ import { BlockchainError } from "./errors";
 /**
  * Minimal client for Etherscan-compatible explorer APIs.
  *
- * - With ETHERSCAN_API_KEY set, uses the Etherscan V2 multichain API (chainid=84532).
- * - Otherwise uses Blockscout's free, keyless Etherscan-compatible API for Base Sepolia.
+ * - With ETHERSCAN_API_KEY set, uses the Etherscan V2 multichain API (chainid=11155111).
+ * - Otherwise uses Blockscout's free, keyless Etherscan-compatible API for Ethereum Sepolia.
  *
  * Both return `{ status, message, result }`, so one parser handles both.
  */
@@ -45,7 +45,7 @@ export type ExplorerConfig = {
   fetchImpl?: typeof fetch;
 };
 
-const BLOCKSCOUT_API = "https://base-sepolia.blockscout.com/api";
+const BLOCKSCOUT_API = "https://eth-sepolia.blockscout.com/api";
 const ETHERSCAN_V2_API = "https://api.etherscan.io/v2/api";
 
 export function explorerName(config: ExplorerConfig = {}) {

@@ -1,6 +1,6 @@
 import type { Address } from "viem";
 import type { ChainClient } from "./types";
-import { CHAIN, explorerAddressUrl } from "./chain";
+import { CHAIN, NETWORK_NAME, explorerAddressUrl } from "./chain";
 import { BlockchainError, toBlockchainError } from "./errors";
 import { formatEth, formatGweiValue } from "./format";
 import { isZeroAddress, parseAddress, parseEthAmount } from "./validation";
@@ -87,7 +87,7 @@ export async function prepareEthTransfer(client: ChainClient, input: PrepareTran
     const checks: TransferCheck[] = [
       { id: "recipient", label: "Recipient address", passed: true, detail: `Valid checksummed address ${to}` },
       { id: "amount", label: "Amount", passed: true, detail: `${formatEth(value, 18)} ETH` },
-      { id: "network", label: "Network", passed: true, detail: `${CHAIN.name} (chain ID ${CHAIN.id}) — testnet ETH only` },
+      { id: "network", label: "Network", passed: true, detail: `${NETWORK_NAME} (chain ID ${CHAIN.id}) — testnet ETH only` },
       {
         id: "wallet",
         label: "Wallet connected",
@@ -118,7 +118,7 @@ export async function prepareEthTransfer(client: ChainClient, input: PrepareTran
     return {
       kind: "eth_transfer",
       chainId: CHAIN.id,
-      network: CHAIN.name,
+      network: NETWORK_NAME,
       from,
       to,
       valueWei: value.toString(),

@@ -1,6 +1,6 @@
 import { erc20Abi, type Address } from "viem";
 import type { ChainClient } from "./types";
-import { CHAIN, explorerAddressUrl, explorerBlockUrl, explorerTxUrl } from "./chain";
+import { CHAIN_ID, NETWORK_NAME, explorerAddressUrl, explorerBlockUrl, explorerTxUrl } from "./chain";
 import { BlockchainError, toBlockchainError } from "./errors";
 import { formatEth, formatGweiValue, formatToken } from "./format";
 import { parseAddress, parseTxHash } from "./validation";
@@ -22,7 +22,7 @@ export async function getEthBalance(client: ChainClient, addressInput: string) {
     ]);
     return {
       address,
-      network: CHAIN.name,
+      network: NETWORK_NAME,
       balanceWei: balance.toString(),
       balanceEth: formatEth(balance, 8),
       isContract: Boolean(code && code !== "0x"),
@@ -34,11 +34,11 @@ export async function getEthBalance(client: ChainClient, addressInput: string) {
   }
 }
 
-/** Well-known ERC-20 tokens on Base Sepolia so users can say "USDC". */
+/** Well-known ERC-20 tokens on Ethereum Sepolia so users can say "USDC". */
 export const KNOWN_TOKENS: Record<string, Address> = {
-  USDC: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-  EURC: "0x808456652fdb597867f38412077A9182bf77359F",
-  WETH: "0x4200000000000000000000000000000000000006",
+  USDC: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", // Circle testnet USDC
+  WETH: "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14", // Canonical Sepolia WETH9
+  LINK: "0x779877A7B0D9E8603169DdbD7836e478b4624789", // Chainlink testnet LINK
 };
 
 export function resolveToken(tokenInput: string): Address {
@@ -53,7 +53,7 @@ export async function getTokenBalance(client: ChainClient, addressInput: string,
   try {
     const code = await client.getCode({ address: token });
     if (!code || code === "0x") {
-      throw new BlockchainError("NOT_FOUND", `No contract is deployed at ${token} on ${CHAIN.name}.`);
+      throw new BlockchainError("NOT_FOUND", `No contract is deployed at ${token} on ${NETWORK_NAME}.`);
     }
     const contract = { address: token, abi: erc20Abi } as const;
     const [balance, decimals, symbol, name] = await Promise.all([
@@ -64,7 +64,7 @@ export async function getTokenBalance(client: ChainClient, addressInput: string,
     ]);
     return {
       address,
-      network: CHAIN.name,
+      network: NETWORK_NAME,
       token: { address: token, symbol, name, decimals },
       balanceRaw: balance.toString(),
       balance: formatToken(balance, decimals),
@@ -90,7 +90,7 @@ export async function getTransactionDetails(client: ChainClient, hashInput: stri
       if (err.code === "NOT_FOUND") {
         throw new BlockchainError(
           "NOT_FOUND",
-          `Transaction ${hash} was not found on ${CHAIN.name}. It may be on another network or not yet broadcast.`,
+          `Transaction ${hash} was not found on ${NETWORK_NAME}. It may be on another network or not yet broadcast.`,
         );
       }
       throw err;
@@ -109,14 +109,14 @@ export async function getTransactionDetails(client: ChainClient, hashInput: stri
 
     return {
       hash,
-      network: CHAIN.name,
+      network: NETWORK_NAME,
       status: receipt ? receipt.status : "pending",
       from: tx.from,
       to: tx.to,
       contractCreated: receipt?.contractAddress ?? null,
       valueWei: tx.value.toString(),
       valueEth: formatEth(tx.value, 8),
-      type: isContractCall ? (tx.to ? "contract_call" : "contract_creation") : "eth_transfer",
+      type: (isContractCall ? (tx.to ? "contract_call" : "contract_creation") : "eth_transfer") as "contract_call" | "contract_creation" | "eth_transfer",
       methodId: isContractCall ? tx.input.slice(0, 10) : null,
       nonce: tx.nonce,
       blockNumber: tx.blockNumber?.toString() ?? null,
@@ -145,8 +145,8 @@ export async function getNetworkStatus(client: ChainClient) {
     const simpleTransferCost = gasPrice * 21_000n;
 
     return {
-      network: CHAIN.name,
-      chainId: CHAIN.id,
+      network: NETWORK_NAME,
+      chainId: CHAIN_ID,
       blockNumber: block.number.toString(),
       blockTimestamp: new Date(Number(block.timestamp) * 1000).toISOString(),
       blockAgeSeconds: Math.max(0, Math.round(Date.now() / 1000 - Number(block.timestamp))),
@@ -179,7 +179,7 @@ export async function getBlockDetails(client: ChainClient, blockNumber?: string 
       ? await client.getBlock({ blockNumber: blockNum })
       : await client.getBlock({ blockTag: "latest" });
     return {
-      network: CHAIN.name,
+      network: NETWORK_NAME,
       number: block.number.toString(),
       hash: block.hash,
       timestamp: new Date(Number(block.timestamp) * 1000).toISOString(),
@@ -194,7 +194,7 @@ export async function getBlockDetails(client: ChainClient, blockNumber?: string 
   } catch (error) {
     const err = toBlockchainError(error);
     if (err.code === "NOT_FOUND" || /BlockNotFound/.test(String((error as Error)?.name))) {
-      throw new BlockchainError("NOT_FOUND", `Block ${blockNumber} does not exist yet on ${CHAIN.name}.`);
+      throw new BlockchainError("NOT_FOUND", `Block ${blockNumber} does not exist yet on ${NETWORK_NAME}.`);
     }
     throw err;
   }

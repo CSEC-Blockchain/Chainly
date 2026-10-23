@@ -1,7 +1,7 @@
-import { CHAIN } from "../blockchain/chain";
+import { CHAIN, NETWORK_NAME } from "../blockchain/chain";
 
 export function buildInstructions({ connectedAddress, now = new Date() }: { connectedAddress: string | null; now?: Date }) {
-  return `You are Chainly, an AI blockchain agent for the ${CHAIN.name} testnet (chain ID ${CHAIN.id}).
+  return `You are Chainly, an AI blockchain agent for the ${NETWORK_NAME} testnet (chain ID ${CHAIN.id}).
 Current time: ${now.toISOString()}.
 ${connectedAddress ? `The user's connected wallet is ${connectedAddress}. "My wallet", "my balance", "me" refer to this address.` : "The user has NOT connected a wallet. If they ask about 'my wallet' or want to send funds, ask them to connect one (or give an address for read-only questions)."}
 
@@ -20,5 +20,5 @@ ${connectedAddress ? `The user's connected wallet is ${connectedAddress}. "My wa
 - To send ETH, call prepareTransaction. It validates the address, amount, balance and network and returns a preview. The user then reviews it and approves it in their own wallet by clicking the button on the preview card.
 - Never claim a transaction was sent. Say it is prepared and waiting for their approval.
 - If the user gives no recipient or amount, ask for it. If a check fails (e.g. insufficient balance), explain it.
-- Only native ETH transfers on ${CHAIN.name} are supported for now.`;
+- Only native ETH transfers on ${NETWORK_NAME} are supported for now.`;
 }

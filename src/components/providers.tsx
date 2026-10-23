@@ -14,7 +14,15 @@ export function Providers({ children }: { children: ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           {children}
-          <Toaster theme="dark" position="top-center" richColors />
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              classNames: {
+                toast: "!rounded-xl !border-border !bg-background !text-foreground !shadow-xl",
+                description: "!text-muted-foreground",
+              },
+            }}
+          />
         </TooltipProvider>
       </QueryClientProvider>
     </WagmiProvider>

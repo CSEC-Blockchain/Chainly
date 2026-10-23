@@ -1,139 +1,233 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
-/* Chainly is a dark-first UI. Tokens follow shadcn/ui naming. */
+/*
+ * Chainly design tokens.
+ * Monochrome foundation + one accent (violet, a nod to Ethereum).
+ * The accent is used sparingly: focus, live state, active selection, highlights.
+ */
 :root {
-  --radius: 0.75rem;
-  --background: oklch(0.145 0.012 265);
-  --foreground: oklch(0.97 0.005 265);
-  --card: oklch(0.185 0.014 265);
-  --card-foreground: oklch(0.97 0.005 265);
-  --popover: oklch(0.2 0.015 265);
-  --popover-foreground: oklch(0.97 0.005 265);
-  --primary: oklch(0.58 0.22 262);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.24 0.015 265);
-  --secondary-foreground: oklch(0.95 0.005 265);
-  --muted: oklch(0.23 0.012 265);
-  --muted-foreground: oklch(0.7 0.02 265);
-  --accent: oklch(0.26 0.03 262);
-  --accent-foreground: oklch(0.97 0.005 265);
-  --destructive: oklch(0.65 0.21 22);
-  --success: oklch(0.74 0.17 155);
-  --warning: oklch(0.8 0.15 80);
-  --border: oklch(1 0 0 / 9%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.58 0.22 262);
-  --glow: oklch(0.58 0.22 262 / 35%);
+  --radius: 0.625rem;
+
+  --background: oklch(1 0 0);
+  --surface: oklch(0.985 0 0);
+  --surface-2: oklch(0.965 0 0);
+  --foreground: oklch(0.2 0 0);
+  --muted-foreground: oklch(0.48 0 0);
+  --subtle-foreground: oklch(0.62 0 0);
+  --border: oklch(0 0 0 / 8%);
+  --border-strong: oklch(0 0 0 / 14%);
+
+  --accent: oklch(0.53 0.2 285);
+  --accent-foreground: oklch(0.99 0 0);
+  --accent-soft: oklch(0.53 0.2 285 / 9%);
+
+  --success: oklch(0.58 0.14 155);
+  --warning: oklch(0.65 0.14 70);
+  --destructive: oklch(0.56 0.2 25);
+
+  --ring: oklch(0.53 0.2 285 / 45%);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --surface: oklch(0.175 0 0);
+  --surface-2: oklch(0.21 0 0);
+  --foreground: oklch(0.95 0 0);
+  --muted-foreground: oklch(0.7 0 0);
+  --subtle-foreground: oklch(0.54 0 0);
+  --border: oklch(1 0 0 / 8%);
+  --border-strong: oklch(1 0 0 / 15%);
+
+  --accent: oklch(0.72 0.15 285);
+  --accent-foreground: oklch(0.16 0 0);
+  --accent-soft: oklch(0.72 0.15 285 / 12%);
+
+  --success: oklch(0.76 0.14 155);
+  --warning: oklch(0.82 0.13 80);
+  --destructive: oklch(0.7 0.17 25);
+
+  --ring: oklch(0.72 0.15 285 / 50%);
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
   --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
+  --color-accent-soft: var(--accent-soft);
   --color-success: var(--success);
   --color-warning: var(--warning);
-  --color-border: var(--border);
-  --color-input: var(--input);
+  --color-destructive: var(--destructive);
   --color-ring: var(--ring);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --animate-fade-up: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade-in: fade-in 0.4s ease-out both;
+  --animate-caret: caret 1s steps(1) infinite;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes caret {
+  50% { opacity: 0; }
+}
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring;
   }
   html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+  html.dark {
     color-scheme: dark;
   }
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "ss01", "cv11";
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "ss02", "cv11";
+    text-rendering: optimizeLegibility;
   }
   ::selection {
-    background: var(--glow);
+    background: var(--accent-soft);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
   }
 }
 
-/* Ambient background: soft glow + faint grid. */
-.app-backdrop {
-  background:
-    radial-gradient(60rem 30rem at 15% -10%, oklch(0.58 0.22 262 / 18%), transparent 60%),
-    radial-gradient(40rem 24rem at 100% 0%, oklch(0.7 0.15 200 / 10%), transparent 60%),
-    var(--background);
-}
-.app-grid {
-  background-image:
-    linear-gradient(oklch(1 0 0 / 3%) 1px, transparent 1px),
-    linear-gradient(90deg, oklch(1 0 0 / 3%) 1px, transparent 1px);
-  background-size: 32px 32px;
-  mask-image: radial-gradient(ellipse at top, black 20%, transparent 70%);
-}
-
-.scrollbar-thin {
+@utility scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: oklch(1 0 0 / 12%) transparent;
+  scrollbar-color: var(--border-strong) transparent;
 }
 
-/* Markdown inside assistant messages. */
-.markdown {
-  @apply text-[0.95rem] leading-relaxed;
+/* Faint dotted grid used once, behind the landing hero. */
+@utility bg-dots {
+  background-image: radial-gradient(var(--border-strong) 1px, transparent 1px);
+  background-size: 22px 22px;
 }
-.markdown > * + * {
-  @apply mt-3;
-}
-.markdown h1,
-.markdown h2,
-.markdown h3 {
-  @apply font-semibold tracking-tight text-foreground;
-}
-.markdown h1 { @apply text-lg; }
-.markdown h2 { @apply text-base; }
-.markdown h3 { @apply text-[0.95rem]; }
-.markdown ul { @apply list-disc space-y-1 pl-5; }
-.markdown ol { @apply list-decimal space-y-1 pl-5; }
-.markdown li::marker { @apply text-muted-foreground; }
-.markdown a { @apply text-primary underline-offset-4 hover:underline; }
-.markdown strong { @apply font-semibold text-foreground; }
-.markdown code {
-  @apply rounded-md bg-muted px-1.5 py-0.5 font-mono text-[0.82em] break-all;
-}
-.markdown pre {
-  @apply overflow-x-auto rounded-lg bg-muted p-3 text-xs;
-}
-.markdown pre code { @apply bg-transparent p-0; }
-.markdown table { @apply w-full border-collapse text-sm; }
-.markdown th, .markdown td { @apply border border-border px-2 py-1 text-left; }
-.markdown blockquote { @apply border-l-2 border-primary/50 pl-3 text-muted-foreground; }
 
-@keyframes shimmer {
-  from { background-position: -200% 0; }
-  to { background-position: 200% 0; }
-}
-.shimmer-text {
-  background: linear-gradient(90deg, var(--muted-foreground) 0%, var(--foreground) 50%, var(--muted-foreground) 100%);
+@utility text-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--muted-foreground) 0%,
+    var(--muted-foreground) 40%,
+    var(--foreground) 50%,
+    var(--muted-foreground) 60%,
+    var(--muted-foreground) 100%
+  );
   background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: shimmer 2.2s linear infinite;
+  animation: shimmer 2.4s linear infinite;
 }
+
+/* Scroll reveal (see use-reveal.ts). */
+.reveal {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Assistant message typography. */
+.prose-chat {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--foreground);
+}
+.prose-chat > * + * { margin-top: 0.75em; }
+.prose-chat h1, .prose-chat h2, .prose-chat h3 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-top: 1.25em;
+}
+.prose-chat h1 { font-size: 1.125rem; }
+.prose-chat h2 { font-size: 1rem; }
+.prose-chat h3 { font-size: 0.9375rem; }
+.prose-chat ul { list-style: disc; padding-left: 1.25rem; }
+.prose-chat ol { list-style: decimal; padding-left: 1.25rem; }
+.prose-chat li + li { margin-top: 0.25em; }
+.prose-chat li::marker { color: var(--subtle-foreground); }
+.prose-chat strong { font-weight: 600; }
+.prose-chat a {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 3px;
+}
+.prose-chat a:hover { text-decoration-color: var(--accent); }
+.prose-chat code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  padding: 0.12em 0.36em;
+  border-radius: 0.3rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  word-break: break-all;
+}
+.prose-chat pre {
+  overflow-x: auto;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 0.8rem;
+}
+.prose-chat pre code { background: none; border: 0; padding: 0; }
+.prose-chat table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.prose-chat th, .prose-chat td { border-bottom: 1px solid var(--border); padding: 0.4rem 0.5rem; text-align: left; }
+.prose-chat th { color: var(--muted-foreground); font-weight: 500; }
+.prose-chat blockquote { border-left: 2px solid var(--border-strong); padding-left: 0.75rem; color: var(--muted-foreground); }
+.prose-chat hr { border-color: var(--border); }

@@ -1,5 +1,5 @@
 import { getAddress, isAddress, parseEther, type Address } from "viem";
-import { CHAIN } from "./chain";
+import { CHAIN, NETWORK_NAME } from "./chain";
 import type { PreparedTransfer } from "./transfer";
 import { MAX_TRANSFER_ETH } from "./validation";
 
@@ -23,7 +23,7 @@ export function guardPreparedTransfer(
   const reasons: string[] = [];
 
   if (preview.kind !== "eth_transfer") reasons.push("Unsupported transaction type.");
-  if (preview.chainId !== CHAIN.id) reasons.push(`Preview is for chain ${preview.chainId}, expected ${CHAIN.name}.`);
+  if (preview.chainId !== CHAIN.id) reasons.push(`Preview is for chain ${preview.chainId}, expected ${NETWORK_NAME}.`);
   if (!preview.readyToSign) reasons.push("Not all safety checks passed.");
   if (!wallet.address) reasons.push("No wallet connected.");
   else if (!preview.from || preview.from.toLowerCase() !== wallet.address.toLowerCase()) {

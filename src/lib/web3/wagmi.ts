@@ -10,7 +10,7 @@ export const wagmiConfig = createConfig({
   chains: [CHAIN],
   connectors: [injected({ shimDisconnect: true })],
   transports: {
-    [CHAIN.id]: http(process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL || DEFAULT_RPC_URLS[0]),
+    [CHAIN.id]: http(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL || DEFAULT_RPC_URLS[0]),
   },
   // Plain RPC calls (no Multicall3 batching) work on any node, incl. local forks.
   batch: { multicall: false },

@@ -1,70 +1,83 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import { memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { LogoMark } from "@/components/brand/logo";
+import { Button } from "@/components/ui/button";
+import { useCopy } from "@/hooks/use-copy";
 import type { ChainlyMessage } from "@/lib/agent/types";
-import { ToolInvocation } from "./tool-invocation";
+import { ToolInvocation, type ToolPart } from "./tool-invocation";
 
-type Props = { message: ChainlyMessage; onAskAgent?: (text: string) => void };
+type Props = { message: ChainlyMessage; streaming?: boolean; onAskAgent?: (text: string) => void };
 
-export const Message = memo(function Message({ message, onAskAgent }: Props) {
+function textOf(message: ChainlyMessage) {
+  return message.parts.map((p) => (p.type === "text" ? p.text : "")).join("\n").trim();
+}
+
+export const Message = memo(function Message({ message, streaming, onAskAgent }: Props) {
   if (message.role === "user") {
-    const text = message.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
     return (
-      <div className="flex justify-end animate-in fade-in-0 slide-in-from-bottom-1">
-        <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md bg-primary/90 px-4 py-2.5 text-[0.95rem] text-primary-foreground shadow-[0_8px_24px_-12px_var(--glow)]">
-          {text}
+      <div className="flex animate-fade-up justify-end">
+        <div className="max-w-[85%] rounded-2xl rounded-br-md bg-surface-2 px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+          {textOf(message)}
         </div>
       </div>
     );
   }
 
+  const text = textOf(message);
+
   return (
-    <div className="flex gap-3 animate-in fade-in-0">
+    <div className="group flex animate-fade-in gap-3.5">
       <AgentAvatar />
-      <div className="min-w-0 flex-1 space-y-3 pt-0.5">
+      <div className="min-w-0 flex-1 space-y-3">
         {message.parts.map((part, i) => {
           if (part.type === "text") {
             return part.text ? (
-              <div key={i} className="markdown">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{ a: (props) => <a {...props} target="_blank" rel="noreferrer" /> }}
-                >
+              <div key={i} className="prose-chat">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ a: (props) => <a {...props} target="_blank" rel="noreferrer" /> }}>
                   {part.text}
                 </ReactMarkdown>
               </div>
             ) : null;
           }
           if (part.type.startsWith("tool-")) {
-            return <ToolInvocation key={i} part={part as Parameters<typeof ToolInvocation>[0]["part"]} onAskAgent={onAskAgent} />;
+            return <ToolInvocation key={i} part={part as ToolPart} onAskAgent={onAskAgent} />;
           }
           return null;
         })}
+        {!streaming && text && <MessageActions text={text} />}
       </div>
     </div>
   );
 });
 
+function MessageActions({ text }: { text: string }) {
+  const { copied, copy } = useCopy();
+  return (
+    <div className="-ml-2 flex opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100 max-md:opacity-100">
+      <Button variant="ghost" size="xs" onClick={() => copy(text)} aria-label="Copy response">
+        {copied ? <Check /> : <Copy />} {copied ? "Copied" : "Copy"}
+      </Button>
+    </div>
+  );
+}
+
 export function AgentAvatar() {
   return (
-    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-gradient-to-br from-primary/40 to-primary/5 text-primary shadow-[0_0_20px_-6px_var(--glow)]">
-      <Sparkles className="size-4" />
+    <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg border bg-background">
+      <LogoMark className="size-4" />
     </div>
   );
 }
 
 export function ThinkingIndicator() {
   return (
-    <div className="flex gap-3">
+    <div className="flex animate-fade-in gap-3.5" role="status" aria-label="Chainly is thinking">
       <AgentAvatar />
-      <div className="flex items-center gap-1 pt-2.5" aria-label="Agent is thinking">
-        {[0, 150, 300].map((d) => (
-          <span key={d} className="size-1.5 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: `${d}ms` }} />
-        ))}
-      </div>
+      <div className="text-shimmer pt-1 text-[15px]">Thinking…</div>
     </div>
   );
 }

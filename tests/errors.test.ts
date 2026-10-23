@@ -4,7 +4,7 @@ import { BlockchainError, toBlockchainError } from "@/lib/blockchain/errors";
 
 describe("toBlockchainError", () => {
   it("maps RPC failures to RPC_ERROR without leaking the RPC URL / API key", () => {
-    const err = new HttpRequestError({ url: "https://base-sepolia.g.alchemy.com/v2/SECRET_KEY_123", status: 503 });
+    const err = new HttpRequestError({ url: "https://eth-sepolia.g.alchemy.com/v2/SECRET_KEY_123", status: 503 });
     expect(err.message).toContain("SECRET_KEY_123"); // viem's raw message does leak it…
     const mapped = toBlockchainError(err);
     expect(mapped.code).toBe("RPC_ERROR");

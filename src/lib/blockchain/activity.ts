@@ -217,7 +217,7 @@ export function buildInsights(input: InsightInput): string[] {
   const insights: string[] = [];
 
   if (s.totalTransactions === 0) {
-    return ["No transactions found for this wallet in the analyzed window — it is new or unused on Base Sepolia."];
+    return ["No transactions found for this wallet in the analyzed window — it is new or unused on Ethereum Sepolia."];
   }
 
   if (s.outgoingCount > s.incomingCount * 2) insights.push("Mostly a sender: outgoing transactions dominate this wallet's history.");
