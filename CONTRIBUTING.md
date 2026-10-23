@@ -10,11 +10,11 @@ You need **Node.js 22+** and **pnpm 10** (`corepack enable` installs the right v
 git clone https://github.com/CSEC-Blockchain/Chainly.git
 cd Chainly
 pnpm install
-cp .env.example .env.local   # then add ONE LLM key
+cp .env.example .env.local   # then add AI_GATEWAY_API_KEY
 pnpm dev                     # http://localhost:3000
 ```
 
-The app works without RPC or explorer keys (it uses public Sepolia endpoints), but chat needs an LLM key. For a free option, see the Groq / OpenAI-compatible setup in the [README](README.md#quick-start). Get Sepolia test ETH from the [faucet](https://cloud.google.com/application/web3/faucet/ethereum/sepolia) and connect MetaMask on **Ethereum Sepolia**.
+The app works without RPC or explorer keys (it uses public Sepolia endpoints), but chat needs an LLM key. By default it uses the Vercel AI Gateway with a free model, so an `AI_GATEWAY_API_KEY` is all you need; other providers are covered in the [README](README.md#quick-start). Get Sepolia test ETH from the [faucet](https://cloud.google.com/application/web3/faucet/ethereum/sepolia) and connect MetaMask on **Ethereum Sepolia**.
 
 > Never commit `.env.local`, API keys, private keys or seed phrases. `.env*` is git-ignored except for `.env.example`.
 
