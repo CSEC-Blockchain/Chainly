@@ -3,6 +3,8 @@ import type { ChainClient } from "../blockchain/types";
 import type { Address } from "viem";
 import { z } from "zod";
 import { analyzeWalletActivity } from "../blockchain/activity";
+import { explainContract } from "../blockchain/contracts";
+import { decodeTransaction } from "../blockchain/decode";
 import { BlockchainError } from "../blockchain/errors";
 import { explorerName, fetchTokenTransfers, fetchTransactions, type ExplorerConfig } from "../blockchain/explorer";
 import {
@@ -13,6 +15,7 @@ import {
   getTransactionDetails,
   KNOWN_TOKENS,
 } from "../blockchain/reader";
+import { prepareTokenTransfer } from "../blockchain/token-transfer";
 import { prepareEthTransfer } from "../blockchain/transfer";
 import { resolveAddress } from "../blockchain/ens";
 
@@ -22,8 +25,9 @@ import { resolveAddress } from "../blockchain/ens";
  * tool code decides *what actually happens*.
  *
  * Security model:
- *  - Every tool is read-only, except `prepareTransaction`, which only *builds*
- *    a proposal. There is no tool that signs or broadcasts.
+ *  - Every tool is read-only, except `prepareTransaction` and
+ *    `prepareTokenTransfer`, which only *build* a proposal. There is no tool
+ *    that signs or broadcasts.
  *  - The sender for a transaction comes from the connected wallet passed in by
  *    the app (closure below), never from the LLM's arguments.
  */
@@ -67,6 +71,20 @@ export function createChainlyTools(ctx: ToolsContext) {
       description: "Read the details and status of a transaction by hash on Ethereum Sepolia (value, gas, fee, confirmations, success/failure).",
       inputSchema: z.object({ hash: z.string().describe("0x-prefixed 32-byte transaction hash") }),
       execute: async ({ hash }) => getTransactionDetails(ctx.client, hash),
+    }),
+
+    decodeTransaction: tool({
+      description:
+        "Explain what a transaction did in plain English: the function it called (with decoded arguments) and the events it emitted, such as token transfers, mints, approvals (flagging unlimited approvals) and WETH wraps. Use this when the user asks what happened in a transaction; use getTransaction for status, gas and fees.",
+      inputSchema: z.object({ hash: z.string().describe("0x-prefixed 32-byte transaction hash") }),
+      execute: async ({ hash }) => decodeTransaction(ctx.client, hash, ctx.explorer),
+    }),
+
+    explainContract: tool({
+      description:
+        "Explain a smart contract: its name, whether the source is verified, token standards (ERC-20/721/1155), proxy/upgradeability, owner, paused state, its read and write functions, and privileged functions like mint, pause or upgrade that give someone special powers. Accepts an address or ENS name.",
+      inputSchema: z.object({ address: z.string().describe("Contract 0x address or ENS name") }),
+      execute: async ({ address }) => explainContract(ctx.client, address, ctx.explorer),
     }),
 
     getNetworkStatus: tool({
@@ -113,6 +131,17 @@ export function createChainlyTools(ctx: ToolsContext) {
       }),
       execute: async ({ to, amountEth }) =>
         prepareEthTransfer(ctx.client, { from: ctx.connectedAddress, to, amountEth }),
+    }),
+
+    prepareTokenTransfer: tool({
+      description: `Prepare an ERC-20 token transfer from the user's connected wallet on Ethereum Sepolia. 'token' may be a contract address or a known symbol (${Object.keys(KNOWN_TOKENS).join(", ")}). Validates the token, recipient and amount, checks the token balance and ETH for gas, estimates gas and returns a preview. This does NOT send anything: the user must review and approve it in their wallet.`,
+      inputSchema: z.object({
+        token: z.string().describe("ERC-20 contract address or known symbol like USDC"),
+        to: z.string().describe("Recipient 0x address or ENS name (e.g. alice.eth)"),
+        amount: z.string().describe("Amount of tokens as a decimal string in whole tokens, e.g. '12.5' (not base units)"),
+      }),
+      execute: async ({ token, to, amount }) =>
+        prepareTokenTransfer(ctx.client, { from: ctx.connectedAddress, token, to, amount }),
     }),
   };
 }

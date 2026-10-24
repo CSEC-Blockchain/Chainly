@@ -394,6 +394,21 @@ const EXAMPLES = [
     result: "A transaction preview with fees, validation checks and an Approve button that opens your wallet.",
   },
   {
+    query: "Send 5 USDC to alice.eth.",
+    tools: ["prepareTokenTransfer"],
+    result: "A token transfer preview: the resolved recipient, your USDC balance after, ETH for gas, and an Approve button.",
+  },
+  {
+    query: "What does the USDC contract on Sepolia do? Who controls it?",
+    tools: ["explainContract"],
+    result: "Its standards, proxy setup, owner, and the privileged functions (mint, pause, upgrade…) that give someone special powers.",
+  },
+  {
+    query: "What happened in my most recent transaction?",
+    tools: ["analyzeWallet", "decodeTransaction"],
+    result: "The function it called and its token transfers and approvals, in plain English, with unlimited approvals flagged.",
+  },
+  {
     query: "Explain the latest block.",
     tools: ["getBlock"],
     result: "Block number, timestamp, transaction count, gas usage and base fee.",

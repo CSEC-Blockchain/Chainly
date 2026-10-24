@@ -3,6 +3,7 @@
 import { AlertCircle, Check, ChevronRight, Copy, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { ActivityCard } from "@/components/cards/activity-card";
+import { ContractCard, DecodedTransactionCard } from "@/components/cards/insight-cards";
 import { BalanceCard, BlockCard, NetworkCard, TokenBalanceCard, TransactionCard } from "@/components/cards/read-cards";
 import { TransactionPreviewCard } from "@/components/cards/transaction-preview-card";
 import { useCopy } from "@/hooks/use-copy";
@@ -15,10 +16,13 @@ const TOOL_LABELS: Record<ChainlyToolName, { running: string; done: string }> = 
   getEthBalance: { running: "Reading ETH balance", done: "Read ETH balance" },
   getTokenBalance: { running: "Reading token balance", done: "Read token balance" },
   getTransaction: { running: "Fetching transaction", done: "Fetched transaction" },
+  decodeTransaction: { running: "Decoding transaction", done: "Decoded transaction" },
+  explainContract: { running: "Inspecting contract", done: "Inspected contract" },
   getNetworkStatus: { running: "Checking network status", done: "Checked network status" },
   getBlock: { running: "Fetching block", done: "Fetched block" },
   analyzeWallet: { running: "Analyzing wallet history", done: "Analyzed wallet history" },
   prepareTransaction: { running: "Validating & preparing transaction", done: "Prepared transaction" },
+  prepareTokenTransfer: { running: "Validating & preparing token transfer", done: "Prepared token transfer" },
 };
 
 /** One tool call: a compact, expandable step plus its rich result card. */
@@ -84,6 +88,10 @@ function ToolResult({ part, onAskAgent }: { part: ToolPart; onAskAgent?: (text: 
       return <TokenBalanceCard data={part.output} />;
     case "tool-getTransaction":
       return <TransactionCard data={part.output} />;
+    case "tool-decodeTransaction":
+      return <DecodedTransactionCard data={part.output} />;
+    case "tool-explainContract":
+      return <ContractCard data={part.output} />;
     case "tool-getNetworkStatus":
       return <NetworkCard data={part.output} />;
     case "tool-getBlock":
@@ -91,6 +99,8 @@ function ToolResult({ part, onAskAgent }: { part: ToolPart; onAskAgent?: (text: 
     case "tool-analyzeWallet":
       return <ActivityCard data={part.output} />;
     case "tool-prepareTransaction":
+      return <TransactionPreviewCard data={part.output} onAskAgent={onAskAgent} />;
+    case "tool-prepareTokenTransfer":
       return <TransactionPreviewCard data={part.output} onAskAgent={onAskAgent} />;
     default:
       return null;
