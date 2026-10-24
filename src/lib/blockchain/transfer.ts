@@ -1,6 +1,7 @@
 import type { Address } from "viem";
 import type { ChainClient } from "./types";
 import { CHAIN, NETWORK_NAME, explorerAddressUrl } from "./chain";
+import { resolveAddress } from "./ens";
 import { BlockchainError, toBlockchainError } from "./errors";
 import { formatEth, formatGweiValue } from "./format";
 import { isZeroAddress, parseAddress, parseEthAmount } from "./validation";
@@ -21,6 +22,8 @@ export type PreparedTransfer = {
   network: string;
   from: Address | null;
   to: Address;
+  /** ENS name the recipient was resolved from (absent in previews saved before ENS support). */
+  toEnsName?: string | null;
   valueWei: string;
   valueEth: string;
   gasLimit: string;
@@ -51,12 +54,13 @@ const GAS_BUFFER_BPS = 12_000n;
 
 export async function prepareEthTransfer(client: ChainClient, input: PrepareTransferInput): Promise<PreparedTransfer> {
   // 1. Validate user intent (throws a friendly BlockchainError on bad input).
-  const to = parseAddress(input.to, "recipient address");
+  const value = parseEthAmount(input.amountEth);
+  const from = input.from ? parseAddress(input.from, "sender address") : null;
+  // An ENS name is resolved once, here; the preview (and the wallet) only ever use the address.
+  const { address: to, ensName: toEnsName } = await resolveAddress(client, input.to, "recipient address");
   if (isZeroAddress(to)) {
     throw new BlockchainError("INVALID_ADDRESS", "Sending to the zero address would burn the funds. Please provide a real recipient.");
   }
-  const value = parseEthAmount(input.amountEth);
-  const from = input.from ? parseAddress(input.from, "sender address") : null;
 
   try {
     // 2. Read live chain state in parallel.
@@ -85,7 +89,12 @@ export async function prepareEthTransfer(client: ChainClient, input: PrepareTran
 
     // 3. Safety checks — every one must pass before the UI enables signing.
     const checks: TransferCheck[] = [
-      { id: "recipient", label: "Recipient address", passed: true, detail: `Valid checksummed address ${to}` },
+      {
+        id: "recipient",
+        label: "Recipient address",
+        passed: true,
+        detail: toEnsName ? `${toEnsName} resolves to ${to}` : `Valid checksummed address ${to}`,
+      },
       { id: "amount", label: "Amount", passed: true, detail: `${formatEth(value, 18)} ETH` },
       { id: "network", label: "Network", passed: true, detail: `${NETWORK_NAME} (chain ID ${CHAIN.id}) — testnet ETH only` },
       {
@@ -110,6 +119,9 @@ export async function prepareEthTransfer(client: ChainClient, input: PrepareTran
 
     const warnings: string[] = [];
     if (from && from.toLowerCase() === to.toLowerCase()) warnings.push("You are sending ETH to yourself — only the gas fee will be spent.");
+    if (toEnsName) {
+      warnings.push(`Recipient resolved from the ENS name ${toEnsName}. Check that ${to} is who you expect: the name's owner can change where it points.`);
+    }
     if (recipientIsContract) warnings.push("The recipient is a smart contract. Make sure it can accept ETH, or the transaction may revert.");
     if (typeof gasEstimate !== "bigint" && gasEstimate.error.code !== "INSUFFICIENT_FUNDS" && from) {
       warnings.push(`Gas estimation failed (${gasEstimate.error.message}); a default gas limit is used.`);
@@ -121,6 +133,7 @@ export async function prepareEthTransfer(client: ChainClient, input: PrepareTran
       network: NETWORK_NAME,
       from,
       to,
+      toEnsName,
       valueWei: value.toString(),
       valueEth: formatEth(value, 18),
       gasLimit: gasLimit.toString(),

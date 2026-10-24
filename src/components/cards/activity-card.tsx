@@ -23,7 +23,7 @@ export function ActivityCard({ data }: { data: Data }) {
         title="Wallet activity"
         meta={
           <span>
-            <AddressLink address={data.address} /> · {s.totalTransactions} txs · {data.source}
+            <AddressLink address={data.address} name={data.ensName} /> · {s.totalTransactions} txs · {data.source}
           </span>
         }
         right={<ExplorerLink href={explorerAddressUrl(data.address)} />}

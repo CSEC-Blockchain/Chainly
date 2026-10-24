@@ -15,6 +15,7 @@ Chainly is an AI agent for **Ethereum Sepolia** (chain ID `11155111`). You ask q
 - 🔎 **Read:** ETH balances, ERC-20 balances (USDC, WETH and LINK by symbol, or any contract), transaction details, gas prices, block info.
 - 📊 **Analyze:** explorer history turned into money in and out, net flow, gas spent, counterparties, contract usage, a daily chart and insights backed by the data.
 - ✍️ **Prepare:** validates the address, amount, balance and network, estimates gas, and shows a preview card. **You** sign in your wallet.
+- 🏷️ **ENS names:** use `alice.eth` anywhere an address is expected. Names resolve on Sepolia's own ENS registry (mainnet names may not exist there), and previews show the name next to the resolved address that your wallet signs.
 - 🛡️ **Safety:**
   - No signing tools.
   - The sender is locked to the connected wallet.
