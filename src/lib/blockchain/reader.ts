@@ -1,6 +1,7 @@
 import { erc20Abi, type Address } from "viem";
 import type { ChainClient } from "./types";
 import { CHAIN_ID, NETWORK_NAME, explorerAddressUrl, explorerBlockUrl, explorerTxUrl } from "./chain";
+import { resolveAddress } from "./ens";
 import { BlockchainError, toBlockchainError } from "./errors";
 import { formatEth, formatGweiValue, formatToken } from "./format";
 import { parseAddress, parseTxHash } from "./validation";
@@ -13,7 +14,7 @@ import { parseAddress, parseTxHash } from "./validation";
  */
 
 export async function getEthBalance(client: ChainClient, addressInput: string) {
-  const address = parseAddress(addressInput);
+  const { address, ensName } = await resolveAddress(client, addressInput);
   try {
     const [balance, blockNumber, code] = await Promise.all([
       client.getBalance({ address }),
@@ -22,6 +23,7 @@ export async function getEthBalance(client: ChainClient, addressInput: string) {
     ]);
     return {
       address,
+      ensName,
       network: NETWORK_NAME,
       balanceWei: balance.toString(),
       balanceEth: formatEth(balance, 8),
@@ -48,8 +50,8 @@ export function resolveToken(tokenInput: string): Address {
 }
 
 export async function getTokenBalance(client: ChainClient, addressInput: string, tokenInput: string) {
-  const address = parseAddress(addressInput);
   const token = resolveToken(tokenInput);
+  const { address, ensName } = await resolveAddress(client, addressInput);
   try {
     const code = await client.getCode({ address: token });
     if (!code || code === "0x") {
@@ -64,6 +66,7 @@ export async function getTokenBalance(client: ChainClient, addressInput: string,
     ]);
     return {
       address,
+      ensName,
       network: NETWORK_NAME,
       token: { address: token, symbol, name, decimals },
       balanceRaw: balance.toString(),

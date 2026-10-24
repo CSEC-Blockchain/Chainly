@@ -18,7 +18,7 @@ function BigValue({ value, unit }: { value: string; unit: string }) {
 export function BalanceCard({ data }: { data: Out<"getEthBalance"> }) {
   return (
     <ResultCard>
-      <ResultHeader icon={<Wallet />} title="ETH balance" meta={<AddressLink address={data.address} />} right={<ExplorerLink href={data.explorerUrl} />} />
+      <ResultHeader icon={<Wallet />} title="ETH balance" meta={<AddressLink address={data.address} name={data.ensName} />} right={<ExplorerLink href={data.explorerUrl} />} />
       <div className="flex items-end justify-between gap-4 px-4 py-5">
         <BigValue value={data.balanceEth} unit="ETH" />
         <div className="flex flex-col items-end gap-1.5">
@@ -43,7 +43,7 @@ export function TokenBalanceCard({ data }: { data: Out<"getTokenBalance"> }) {
         <BigValue value={data.balance} unit={data.token.symbol} />
         <div className="text-right text-[11px] text-subtle-foreground">
           <div>holder</div>
-          <AddressLink address={data.address} />
+          <AddressLink address={data.address} name={data.ensName} />
         </div>
       </div>
     </ResultCard>

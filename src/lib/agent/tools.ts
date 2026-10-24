@@ -14,7 +14,7 @@ import {
   KNOWN_TOKENS,
 } from "../blockchain/reader";
 import { prepareEthTransfer } from "../blockchain/transfer";
-import { parseAddress } from "../blockchain/validation";
+import { resolveAddress } from "../blockchain/ens";
 
 /**
  * The agent's toolbox. Each tool is a thin, typed wrapper around a reusable
@@ -36,7 +36,7 @@ export type ToolsContext = {
 
 const addressSchema = z
   .string()
-  .describe("A 0x-prefixed EVM address. Use the connected wallet address when the user says 'my wallet'.");
+  .describe("A 0x-prefixed EVM address or an ENS name (e.g. alice.eth). Use the connected wallet address when the user says 'my wallet'.");
 
 export function createChainlyTools(ctx: ToolsContext) {
   const requireAddress = (address: string | undefined) => {
@@ -89,7 +89,7 @@ export function createChainlyTools(ctx: ToolsContext) {
         limit: z.number().int().min(5).max(200).default(50).describe("How many recent transactions to analyze"),
       }),
       execute: async ({ address, limit }) => {
-        const target = parseAddress(requireAddress(address));
+        const { address: target, ensName } = await resolveAddress(ctx.client, requireAddress(address));
         const [txs, tokenTransfers] = await Promise.all([
           fetchTransactions(target, limit, ctx.explorer),
           // Token history is a nice-to-have: don't fail the whole analysis on it.
@@ -97,6 +97,7 @@ export function createChainlyTools(ctx: ToolsContext) {
         ]);
         return {
           ...analyzeWalletActivity(target, txs, tokenTransfers),
+          ensName,
           analyzedLimit: limit,
           source: explorerName(ctx.explorer),
         };
@@ -107,7 +108,7 @@ export function createChainlyTools(ctx: ToolsContext) {
       description:
         "Prepare a native ETH transfer from the user's connected wallet on Ethereum Sepolia. Validates the recipient and amount, checks the balance, estimates gas and returns a preview. This does NOT send anything: the user must review and approve it in their wallet. Also use this to estimate the gas fee of a transfer.",
       inputSchema: z.object({
-        to: z.string().describe("Recipient 0x address"),
+        to: z.string().describe("Recipient 0x address or ENS name (e.g. alice.eth)"),
         amountEth: z.string().describe("Amount of ETH as a decimal string, e.g. '0.001'"),
       }),
       execute: async ({ to, amountEth }) =>

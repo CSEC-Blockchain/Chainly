@@ -49,7 +49,7 @@ export function Row({ label, children }: { label: string; children: ReactNode })
   );
 }
 
-export function AddressLink({ address, chars = 4 }: { address: string | null | undefined; chars?: number }) {
+export function AddressLink({ address, name, chars = 4 }: { address: string | null | undefined; name?: string | null; chars?: number }) {
   const { copied, copy } = useCopy();
   if (!address) return <span className="text-subtle-foreground">—</span>;
   return (
@@ -59,9 +59,15 @@ export function AddressLink({ address, chars = 4 }: { address: string | null | u
         target="_blank"
         rel="noreferrer"
         className="underline-offset-2 hover:text-foreground hover:underline"
-        title={address}
+        title={name ? `${name} → ${address}` : address}
       >
-        {shortAddress(address, chars)}
+        {name ? (
+          <>
+            <span className="font-sans font-medium">{name}</span> <span className="text-subtle-foreground">{shortAddress(address, chars)}</span>
+          </>
+        ) : (
+          shortAddress(address, chars)
+        )}
       </a>
       <button
         type="button"

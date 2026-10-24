@@ -91,7 +91,7 @@ export function TransactionPreviewCard({ data, onAskAgent }: Props) {
         <div className="mt-3 flex flex-wrap items-center gap-2 text-muted-foreground">
           <AddressLink address={data.from} />
           <ArrowRight className="size-3.5 text-subtle-foreground" />
-          <AddressLink address={data.to} />
+          <AddressLink address={data.to} name={data.toEnsName} />
         </div>
       </div>
 
