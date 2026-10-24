@@ -74,6 +74,31 @@ describe("analyzeWalletActivity", () => {
     expect(result.dailyActivity[1]).toMatchObject({ txCount: 2, outEth: 0.5 });
   });
 
+  it("builds a running net-flow series that includes gas", () => {
+    // Oct 20: −0.1 sent − 0.0002 gas · Oct 21: −0.5 sent − 0.000042 gas · Oct 22: +1 received
+    expect(result.flowSeries).toEqual([
+      { date: "2026-10-20", netEth: -0.1002, cumulativeEth: -0.1002 },
+      { date: "2026-10-21", netEth: -0.500042, cumulativeEth: -0.600242 },
+      { date: "2026-10-22", netEth: 1, cumulativeEth: 0.399758 },
+    ]);
+  });
+
+  it("breaks gas down by activity, largest first", () => {
+    expect(result.gasBreakdown).toEqual([
+      { label: "swapExactTokensForTokens", gasEth: "0.0002", txCount: 2, sharePercent: 82.64 },
+      { label: "ETH transfers", gasEth: "0.000042", txCount: 2, sharePercent: 17.35 },
+    ]);
+  });
+
+  it("folds gas beyond the top five activities into Other", () => {
+    const many = Array.from({ length: 7 }, (_, i) =>
+      tx({ to: DEX, input: "0x12345678", functionName: `method${i}()`, gasUsed: String((i + 1) * 10_000) }),
+    );
+    const { gasBreakdown } = analyzeWalletActivity(ME, many, [], NOW);
+    expect(gasBreakdown.map((g) => g.label)).toEqual(["method6", "method5", "method4", "method3", "method2", "Other"]);
+    expect(gasBreakdown[5]).toMatchObject({ txCount: 2, gasEth: "0.00003" });
+  });
+
   it("summarizes token flows with decimals", () => {
     expect(result.tokenActivity).toEqual([
       expect.objectContaining({ symbol: "USDC", transfers: 1, received: "2.5", sent: "0" }),

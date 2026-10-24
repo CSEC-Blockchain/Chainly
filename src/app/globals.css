@@ -28,6 +28,9 @@
   --warning: oklch(0.65 0.14 70);
   --destructive: oklch(0.56 0.2 25);
 
+  /* Chart series color, validated (lightness band, chroma, 3:1 contrast) against the light background. */
+  --chart-1: oklch(0.53 0.2 285);
+
   --ring: oklch(0.53 0.2 285 / 45%);
 }
 
@@ -49,6 +52,9 @@
   --warning: oklch(0.82 0.13 80);
   --destructive: oklch(0.7 0.17 25);
 
+  /* Its own dark step (not the accent): the dark chart band is L 0.48–0.67. */
+  --chart-1: oklch(0.66 0.15 285);
+
   --ring: oklch(0.72 0.15 285 / 50%);
 }
 
@@ -67,6 +73,7 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-destructive: var(--destructive);
+  --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
 
   --radius-sm: calc(var(--radius) - 4px);
