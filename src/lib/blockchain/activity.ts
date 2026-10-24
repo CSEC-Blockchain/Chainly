@@ -23,6 +23,10 @@ export type ActivityTx = {
 
 export type WalletActivity = ReturnType<typeof analyzeWalletActivity>;
 
+/** Chart limits: keep tool output (and the LLM's context) small. */
+const MAX_FLOW_POINTS = 90;
+const MAX_GAS_CATEGORIES = 5;
+
 export function analyzeWalletActivity(
   address: Address,
   txs: ExplorerTx[],
@@ -44,7 +48,8 @@ export function analyzeWalletActivity(
 
   const counterparties = new Map<string, { address: string; txCount: number; sentWei: bigint; receivedWei: bigint }>();
   const methods = new Map<string, number>();
-  const daily = new Map<string, { date: string; inWei: bigint; outWei: bigint; txCount: number }>();
+  const daily = new Map<string, { date: string; inWei: bigint; outWei: bigint; gasWei: bigint; txCount: number }>();
+  const gasByActivity = new Map<string, { label: string; gasWei: bigint; txCount: number }>();
   const recent: ActivityTx[] = [];
 
   for (const tx of txs) {
@@ -66,6 +71,14 @@ export function analyzeWalletActivity(
     if (isCall) contractCalls++;
     if (method) methods.set(method, (methods.get(method) ?? 0) + 1);
     gasSpentWei += fee;
+    if (fee > 0n) {
+      // Failed transactions still burn gas, so they count here too.
+      const label = isCreation ? "Contract deploys" : method ?? "ETH transfers";
+      const entry = gasByActivity.get(label) ?? { label, gasWei: 0n, txCount: 0 };
+      entry.gasWei += fee;
+      entry.txCount++;
+      gasByActivity.set(label, entry);
+    }
 
     if (!failed) {
       if (direction === "in") {
@@ -88,8 +101,9 @@ export function analyzeWalletActivity(
 
     const ts = Number(tx.timeStamp) * 1000;
     const date = Number.isFinite(ts) ? new Date(ts).toISOString().slice(0, 10) : "unknown";
-    const day = daily.get(date) ?? { date, inWei: 0n, outWei: 0n, txCount: 0 };
+    const day = daily.get(date) ?? { date, inWei: 0n, outWei: 0n, gasWei: 0n, txCount: 0 };
     day.txCount++;
+    day.gasWei += fee;
     if (!failed && direction === "in") day.inWei += value;
     if (!failed && direction === "out") day.outWei += value;
     daily.set(date, day);
@@ -142,10 +156,39 @@ export function analyzeWalletActivity(
     .slice(0, 5)
     .map(([method, count]) => ({ method, count }));
 
-  const dailyActivity = [...daily.values()]
-    .filter((d) => d.date !== "unknown")
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .map((d) => ({ date: d.date, txCount: d.txCount, inEth: Number(formatEth(d.inWei, 6)), outEth: Number(formatEth(d.outWei, 6)) }));
+  const sortedDays = [...daily.values()].filter((d) => d.date !== "unknown").sort((a, b) => a.date.localeCompare(b.date));
+  const dailyActivity = sortedDays.map((d) => ({
+    date: d.date,
+    txCount: d.txCount,
+    inEth: Number(formatEth(d.inWei, 6)),
+    outEth: Number(formatEth(d.outWei, 6)),
+  }));
+
+  // Running ETH flow over the analyzed window: received − sent − gas, day by day.
+  // Not a balance history: it starts at 0 and ignores internal (contract) transfers.
+  let runningWei = 0n;
+  const flowSeries = sortedDays.slice(-MAX_FLOW_POINTS).map((d) => {
+    const netWei = d.inWei - d.outWei - d.gasWei;
+    runningWei += netWei;
+    return { date: d.date, netEth: Number(formatEth(netWei, 8)), cumulativeEth: Number(formatEth(runningWei, 8)) };
+  });
+
+  const gasRanked = [...gasByActivity.values()].sort((a, b) => (b.gasWei > a.gasWei ? 1 : b.gasWei < a.gasWei ? -1 : 0));
+  const gasTop = gasRanked.slice(0, MAX_GAS_CATEGORIES);
+  const gasRest = gasRanked.slice(MAX_GAS_CATEGORIES);
+  if (gasRest.length) {
+    gasTop.push({
+      label: "Other",
+      gasWei: gasRest.reduce((sum, g) => sum + g.gasWei, 0n),
+      txCount: gasRest.reduce((sum, g) => sum + g.txCount, 0),
+    });
+  }
+  const gasBreakdown = gasTop.map((g) => ({
+    label: g.label,
+    gasEth: formatEth(g.gasWei, 8),
+    txCount: g.txCount,
+    sharePercent: gasSpentWei > 0n ? Number((g.gasWei * 10_000n) / gasSpentWei) / 100 : 0,
+  }));
 
   const tokenActivity = [...tokens.values()]
     .sort((a, b) => b.transfers - a.transfers)
@@ -186,6 +229,8 @@ export function analyzeWalletActivity(
     topMethods,
     tokenActivity,
     dailyActivity,
+    flowSeries,
+    gasBreakdown,
     recentTransactions: recent,
     insights: buildInsights({ summary, sentWei, receivedWei, gasSpentWei, topCounterparties, topMethods, tokenActivity, lastTs, now }),
   };

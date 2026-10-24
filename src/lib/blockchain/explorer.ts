@@ -1,3 +1,4 @@
+import { getAddress, isAddress, type Abi, type Address } from "viem";
 import { CHAIN_ID } from "./chain";
 import { BlockchainError } from "./errors";
 
@@ -61,7 +62,7 @@ export function buildExplorerUrl(params: Record<string, string>, config: Explore
 }
 
 /** Parse an Etherscan-style response, mapping "no results" to an empty list. */
-export function parseExplorerResponse<T>(body: unknown): T[] {
+export function parseExplorerResponse<T>(body: unknown, what = "this wallet's history"): T[] {
   const data = body as ExplorerResponse<T> | null;
   if (!data || typeof data !== "object" || !("result" in data)) {
     throw new BlockchainError("EXPLORER_ERROR", "The block explorer returned an unexpected response.");
@@ -69,17 +70,17 @@ export function parseExplorerResponse<T>(body: unknown): T[] {
   if (Array.isArray(data.result)) return data.result;
 
   const detail = `${data.message ?? ""} ${typeof data.result === "string" ? data.result : ""}`;
-  if (/no (transactions|token transfers|records) found/i.test(detail)) return [];
+  if (/no (transactions|token transfers|records) found|not verified/i.test(detail)) return [];
   if (/rate limit/i.test(detail)) {
     throw new BlockchainError("EXPLORER_ERROR", "The block explorer rate limit was reached. Please retry in a few seconds.");
   }
   if (/invalid api key|missing\/invalid api key/i.test(detail)) {
     throw new BlockchainError("EXPLORER_ERROR", "The explorer API key is invalid. Check ETHERSCAN_API_KEY on the server.");
   }
-  throw new BlockchainError("EXPLORER_ERROR", "The block explorer could not return this wallet's history.");
+  throw new BlockchainError("EXPLORER_ERROR", `The block explorer could not return ${what}.`);
 }
 
-async function explorerGet<T>(params: Record<string, string>, config: ExplorerConfig): Promise<T[]> {
+async function explorerGet<T>(params: Record<string, string>, config: ExplorerConfig, what?: string): Promise<T[]> {
   const fetchImpl = config.fetchImpl ?? fetch;
   // Never include the URL in error messages — it contains the API key.
   let res: Response;
@@ -104,7 +105,7 @@ async function explorerGet<T>(params: Record<string, string>, config: ExplorerCo
   } catch {
     throw new BlockchainError("EXPLORER_ERROR", "The block explorer returned invalid JSON.");
   }
-  return parseExplorerResponse<T>(body);
+  return parseExplorerResponse<T>(body, what);
 }
 
 export function fetchTransactions(address: string, limit: number, config: ExplorerConfig = {}) {
@@ -119,4 +120,55 @@ export function fetchTokenTransfers(address: string, limit: number, config: Expl
     { module: "account", action: "tokentx", address, page: "1", offset: String(limit), sort: "desc" },
     config,
   );
+}
+
+/** Verified source metadata. The raw source code is deliberately not exposed (see explainContract). */
+export type ContractSource = {
+  verified: boolean;
+  name: string | null;
+  abi: Abi | null;
+  compilerVersion: string | null;
+  license: string | null;
+  proxy: boolean;
+  implementation: Address | null;
+};
+
+/** Etherscan and Blockscout name a few `getsourcecode` fields differently. */
+type SourceCodeRow = {
+  ABI?: string;
+  ContractName?: string;
+  CompilerVersion?: string;
+  LicenseType?: string;
+  Proxy?: string;
+  Implementation?: string;
+  IsProxy?: string;
+  ImplementationAddress?: string;
+};
+
+export async function fetchContractSource(address: string, config: ExplorerConfig = {}): Promise<ContractSource> {
+  const rows = await explorerGet<SourceCodeRow>(
+    { module: "contract", action: "getsourcecode", address },
+    config,
+    "this contract's source",
+  );
+  const row = rows[0] ?? {};
+  let abi: Abi | null = null;
+  try {
+    const parsed: unknown = row.ABI ? JSON.parse(row.ABI) : null;
+    if (Array.isArray(parsed)) abi = parsed as Abi;
+  } catch {
+    // "Contract source code not verified" and similar
+  }
+  const implementation = [row.Implementation, row.ImplementationAddress].find(
+    (a): a is string => Boolean(a) && isAddress(a!, { strict: false }) && !/^0x0{40}$/i.test(a!),
+  );
+  return {
+    verified: abi !== null,
+    name: row.ContractName?.trim() || null,
+    abi,
+    compilerVersion: row.CompilerVersion?.trim() || null,
+    license: row.LicenseType?.trim() || null,
+    proxy: row.Proxy === "1" || row.IsProxy === "true" || Boolean(implementation),
+    implementation: implementation ? getAddress(implementation) : null,
+  };
 }

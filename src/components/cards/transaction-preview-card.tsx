@@ -8,14 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { shortError } from "@/components/wallet/connect-button";
 import { CHAIN_ID, explorerTxUrl, NETWORK_NAME } from "@/lib/blockchain/chain";
-import { guardPreparedTransfer, PREVIEW_TTL_MS } from "@/lib/blockchain/signing-guard";
+import { guardPreparedTransfer, PREVIEW_TTL_MS, type PreparedPreview } from "@/lib/blockchain/signing-guard";
 import { getSubmittedHash, recordSubmittedHash } from "@/lib/blockchain/tx-records";
-import type { PreparedTransfer } from "@/lib/blockchain/transfer";
 import { cn } from "@/lib/utils";
 import { AddressLink, HashLink, ResultCard, Row } from "./primitives";
 
 type Props = {
-  data: PreparedTransfer;
+  data: PreparedPreview;
   /** Hands the tx hash back to the agent for verification. */
   onAskAgent?: (text: string) => void;
 };
@@ -38,6 +37,12 @@ export function TransactionPreviewCard({ data, onAskAgent }: Props) {
   const receipt = useWaitForTransactionReceipt({ hash: hash ?? undefined, chainId: CHAIN_ID, query: { enabled: Boolean(hash) } });
 
   const failedChecks = data.checks.filter((c) => !c.passed);
+  const isToken = data.kind === "erc20_transfer";
+  const amount = isToken ? data.amount : data.valueEth;
+  const unit = isToken ? data.token.symbol : "ETH";
+  const prepareAgainPrompt = isToken
+    ? `Prepare a transfer of ${data.amount} ${data.token.symbol} (token ${data.token.address}) to ${data.to}`
+    : `Prepare a transaction to send ${data.valueEth} ETH to ${data.to}`;
 
   async function approve() {
     const guard = guardPreparedTransfer(data, { address });
@@ -86,7 +91,7 @@ export function TransactionPreviewCard({ data, onAskAgent }: Props) {
       <div className="px-4 pt-5 pb-4">
         <div className="text-xs text-subtle-foreground">You send</div>
         <div className="mt-1 text-[2rem] leading-none font-semibold tracking-[-0.03em] tabular-nums">
-          {data.valueEth} <span className="text-base font-normal tracking-normal text-muted-foreground">ETH</span>
+          {amount} <span className="text-base font-normal tracking-normal text-muted-foreground">{unit}</span>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2 text-muted-foreground">
           <AddressLink address={data.from} />
@@ -99,19 +104,36 @@ export function TransactionPreviewCard({ data, onAskAgent }: Props) {
         <Row label="Network">
           {data.network} <span className="text-subtle-foreground">· {data.chainId}</span>
         </Row>
+        {isToken && (
+          <Row label="Token">
+            <AddressLink address={data.token.address} name={data.token.symbol} />
+          </Row>
+        )}
         <Row label="Estimated fee">{data.estimatedFeeEth} ETH</Row>
         <Row label="Max fee">
           <span className="text-muted-foreground">
             {data.maxFeeEth} ETH · {data.maxFeePerGasGwei} gwei
           </span>
         </Row>
-        <Row label="Max total">
-          <span className="font-medium">{data.totalCostEth} ETH</span>
-        </Row>
-        {data.balanceEth && (
-          <Row label="Balance after">
-            <span className={cn(!data.balanceAfterEth && "text-destructive")}>{data.balanceAfterEth ? `${data.balanceAfterEth} ETH` : "Insufficient"}</span>
-          </Row>
+        {isToken ? (
+          data.tokenBalance && (
+            <Row label="Balance after">
+              <span className={cn(!data.tokenBalanceAfter && "text-destructive")}>
+                {data.tokenBalanceAfter ? `${data.tokenBalanceAfter} ${data.token.symbol}` : "Insufficient"}
+              </span>
+            </Row>
+          )
+        ) : (
+          <>
+            <Row label="Max total">
+              <span className="font-medium">{data.totalCostEth} ETH</span>
+            </Row>
+            {data.balanceEth && (
+              <Row label="Balance after">
+                <span className={cn(!data.balanceAfterEth && "text-destructive")}>{data.balanceAfterEth ? `${data.balanceAfterEth} ETH` : "Insufficient"}</span>
+              </Row>
+            )}
+          </>
         )}
       </div>
 
@@ -195,7 +217,7 @@ export function TransactionPreviewCard({ data, onAskAgent }: Props) {
                 size="xs"
                 variant="outline"
                 className="ml-auto"
-                onClick={() => onAskAgent(`Prepare a transaction to send ${data.valueEth} ETH to ${data.to}`)}
+                onClick={() => onAskAgent(prepareAgainPrompt)}
               >
                 <RotateCcw /> Prepare again
               </Button>

@@ -13,8 +13,10 @@ Chainly is an AI agent for **Ethereum Sepolia** (chain ID `11155111`). You ask q
 
 - 💬 **Conversational agent:** a streaming chat with Markdown answers. Each tool call shows an expandable step with its raw JSON input and output, plus a rich result card.
 - 🔎 **Read:** ETH balances, ERC-20 balances (USDC, WETH and LINK by symbol, or any contract), transaction details, gas prices, block info.
+- 🧾 **Decode transactions:** what a transaction actually did, in plain English: the function it called with its arguments, token transfers, mints, approvals (unlimited ones are flagged), NFT moves and WETH wraps.
+- 📜 **Explain contracts:** name, verification, token standards, proxy and upgradeability, owner, paused state, functions, and the privileged ones (mint, pause, upgrade…) that give someone special powers.
 - 📊 **Analyze:** explorer history turned into money in and out, net flow, gas spent, counterparties, contract usage, a daily chart and insights backed by the data.
-- ✍️ **Prepare:** validates the address, amount, balance and network, estimates gas, and shows a preview card. **You** sign in your wallet.
+- ✍️ **Prepare:** ETH and ERC-20 token transfers. Validates the address, amount, balance and network, estimates gas, and shows a preview card. **You** sign in your wallet.
 - 🏷️ **ENS names:** use `alice.eth` anywhere an address is expected. Names resolve on Sepolia's own ENS registry (mainnet names may not exist there), and previews show the name next to the resolved address that your wallet signs.
 - 🛡️ **Safety:**
   - No signing tools.
@@ -89,7 +91,7 @@ Explorer links point to [sepolia.etherscan.io](https://sepolia.etherscan.io). Ge
 │                               │  SSE stream │             tools, stopWhen=8 steps) │
 │ tool steps + result cards ◀───┼◀────────────┤        │            ▲                │
 │                               │             │        ▼            │ JSON           │
-│ TransactionPreviewCard        │             │  lib/agent/tools.ts (7 typed tools)  │
+│ TransactionPreviewCard        │             │  lib/agent/tools.ts (10 typed tools) │
 │  └ signing-guard (re-check)   │             │        │                             │
 │  └ wallet.sendTransaction ◀── user click    │        ▼                             │
 └──────────────┬────────────────┘             │  lib/blockchain/* (pure, tested)     │
@@ -109,13 +111,14 @@ src/
 ├─ lib/
 │  ├─ agent/                  ← model provider, tool definitions, instructions, types
 │  ├─ blockchain/             ← chain config, reader, explorer, activity, transfer,
+│  │                             token-transfer, contracts, decode, ens,
 │  │                             signing-guard, tx-records, validation, errors
 │  ├─ web3/wagmi.ts           ← browser wallet config (injected wallets, Sepolia)
 │  └─ chat-store.ts           ← localStorage chat history
 └─ components/
    ├─ landing/                ← hero, product preview, sections
    ├─ chat/                   ← workspace, sidebar, chat view, composer, messages, tool steps
-   ├─ cards/                  ← balance, token, tx, network, block, activity, tx preview
+   ├─ cards/                  ← balance, token, tx, decoded tx, contract, network, block, activity, tx preview
    ├─ wallet/                 ← wallet button + menu, network indicator, identicon
    └─ ui/                     ← shadcn/ui-style primitives
 ```
@@ -129,10 +132,13 @@ The network lives in one file, `src/lib/blockchain/chain.ts`. Changing chains me
 | `getEthBalance` | `address?` (defaults to connected wallet) | RPC | balance, EOA/contract, block |
 | `getTokenBalance` | `address?`, `token` (symbol or contract) | RPC (`erc20Abi`) | balance with decimals, token metadata |
 | `getTransaction` | `hash` | RPC tx + receipt + block | status, value, fee, gas, confirmations |
+| `decodeTransaction` | `hash` | RPC tx + receipt, verified ABI from the explorer, standard ABIs | decoded call, events with plain-English summaries, flags |
+| `explainContract` | `address` (or ENS name) | RPC (code, EIP-1967 slot, probes), verified ABI from the explorer | standards, proxy, owner, functions, privileged functions |
 | `getNetworkStatus` | none | RPC | latest block, gas price, base/priority fee, utilization |
 | `getBlock` | `blockNumber?` | RPC | block stats |
 | `analyzeWallet` | `address?`, `limit` | Blockscout / Etherscan V2 | stats, counterparties, daily chart, insights |
 | `prepareTransaction` | `to`, `amountEth` | RPC (fees, balance, estimateGas, getCode) | a **preview** with checks, `readyToSign` |
+| `prepareTokenTransfer` | `token`, `to`, `amount` | RPC (token metadata, balances, fees, estimateGas) | a **preview** with `transfer` calldata and checks, `readyToSign` |
 
 ### Transaction safety model
 
@@ -142,11 +148,13 @@ The network lives in one file, `src/lib/blockchain/chain.ts`. Changing chains me
    - checksummed addresses and a zero-address block
    - locale-safe amounts (`"1,5"` is rejected, not guessed)
    - a 10 ETH ceiling
-   - a balance check covering amount plus max gas
+   - a balance check covering amount plus max gas (for tokens: the token balance, plus ETH for gas)
+   - no token transfers to the token's own contract
    - a warning when the recipient is a contract
 4. **Human in the loop:** only a click on **Approve in wallet** opens the wallet.
-5. **Defense in depth:** `signing-guard.ts` re-checks the chain ID, sender, amount and gas bounds, and a 10-minute expiry. `tx-records.ts` stops a submitted preview from being re-signed when a chat is reopened.
+5. **Defense in depth:** `signing-guard.ts` re-checks the chain ID, sender, amount and gas bounds, and a 10-minute expiry. For token transfers it decodes the calldata itself and refuses anything but `transfer(recipient, amount)` matching the card. `tx-records.ts` stops a submitted preview from being re-signed when a chat is reopened.
 6. **No leaks:** viem errors (which can include RPC URLs with keys) are mapped to clean messages.
+7. **Untrusted contract data:** `explainContract` never passes raw source code to the model, and names from ABIs are filtered to plain identifiers, so text planted in a contract can't easily steer the agent.
 
 ## Design system
 

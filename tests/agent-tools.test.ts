@@ -43,7 +43,18 @@ describe("agent tools", () => {
   it("exposes only read and prepare tools — nothing that signs or sends", () => {
     const tools = createChainlyTools({ client, connectedAddress: null, explorer: {} });
     expect(Object.keys(tools).sort()).toEqual(
-      ["analyzeWallet", "getBlock", "getEthBalance", "getNetworkStatus", "getTokenBalance", "getTransaction", "prepareTransaction"].sort(),
+      [
+        "analyzeWallet",
+        "decodeTransaction",
+        "explainContract",
+        "getBlock",
+        "getEthBalance",
+        "getNetworkStatus",
+        "getTokenBalance",
+        "getTransaction",
+        "prepareTokenTransfer",
+        "prepareTransaction",
+      ].sort(),
     );
   });
 

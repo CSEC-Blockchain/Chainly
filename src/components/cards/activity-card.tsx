@@ -6,15 +6,21 @@ import { Badge } from "@/components/ui/badge";
 import type { ChainlyUITools } from "@/lib/agent/tools";
 import { explorerAddressUrl } from "@/lib/blockchain/chain";
 import { cn } from "@/lib/utils";
+import { FlowChart, GasChart } from "./activity-charts";
 import { AddressLink, ExplorerLink, HashLink, ResultCard, ResultHeader, Stat, StatGrid, timeAgo } from "./primitives";
 
 type Data = ChainlyUITools["analyzeWallet"]["output"];
-type Tab = "insights" | "transactions" | "counterparties";
+type Tab = "insights" | "charts" | "transactions" | "counterparties";
 
 export function ActivityCard({ data }: { data: Data }) {
   const s = data.summary;
   const [tab, setTab] = useState<Tab>("insights");
   const total = s.incomingCount + s.outgoingCount || 1;
+  // Older saved chats predate the chart fields.
+  const flowSeries = data.flowSeries ?? [];
+  const gasBreakdown = data.gasBreakdown ?? [];
+  const hasCharts = flowSeries.length > 1 || gasBreakdown.length > 0;
+  const tabs: Tab[] = hasCharts ? ["insights", "charts", "transactions", "counterparties"] : ["insights", "transactions", "counterparties"];
 
   return (
     <ResultCard>
@@ -57,7 +63,7 @@ export function ActivityCard({ data }: { data: Data }) {
           </div>
 
           <div className="flex gap-1 border-t px-3 pt-2" role="tablist">
-            {(["insights", "transactions", "counterparties"] as const).map((t) => (
+            {tabs.map((t) => (
               <button
                 key={t}
                 type="button"
@@ -94,6 +100,13 @@ export function ActivityCard({ data }: { data: Data }) {
                   </li>
                 )}
               </ul>
+            )}
+
+            {tab === "charts" && (
+              <div className="space-y-6 py-1">
+                <FlowChart series={flowSeries} />
+                <GasChart breakdown={gasBreakdown} />
+              </div>
             )}
 
             {tab === "transactions" && (
